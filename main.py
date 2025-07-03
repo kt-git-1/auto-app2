@@ -118,24 +118,32 @@ def main(args):
         merged_fastq = sample_dir / "merged.fastq.gz"
         logger.info(f"Merging files in {sample_dir} to create {merged_fastq}")
         try:
-            subprocess.run([
-                str(args.nextflow), "run", str(args.merge_script),
-                "--input_dir", str(sample_dir), "--output_file", str(merged_fastq)
-            ], check=True)
+            result = subprocess.run(
+                [str(args.nextflow), "run", str(args.merge_script),
+                 "--input_dir", str(sample_dir), "--output_file", str(merged_fastq)],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            logger.info(f"Merge stdout for {sample_acc}: {result.stdout}")
         except subprocess.CalledProcessError as e:
-            logger.error(f"Error merging files for {sample_acc}: {e}")
+            logger.error(f"Error merging files for {sample_acc}: {e.stderr.strip()}")
             continue
 
         sample_output_dir = project_output_dir / sample_acc
         sample_output_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Analyzing merged file {merged_fastq}")
         try:
-            subprocess.run([
-                str(args.nextflow), "run", str(args.run_script),
-                "--input", str(merged_fastq), "--output_dir", str(sample_output_dir)
-            ], check=True)
+            result = subprocess.run(
+                [str(args.nextflow), "run", str(args.run_script),
+                 "--input", str(merged_fastq), "--output_dir", str(sample_output_dir)],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            logger.info(f"Analysis stdout for {sample_acc}: {result.stdout}")
         except subprocess.CalledProcessError as e:
-            logger.error(f"Error analyzing files for {sample_acc}: {e}")
+            logger.error(f"Error analyzing files for {sample_acc}: {e.stderr.strip()}")
             continue
 
 if __name__ == "__main__":
