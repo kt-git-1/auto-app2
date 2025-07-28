@@ -15,21 +15,11 @@ class PipelineConfig:
         self.logs_dir = self.base_dir / "logs"
         self.temp_dir = self.base_dir / "temp"
         
-        # サブディレクトリ
-        self.bam_dir = self.results_dir / "bam_files"
-        self.softclipped_dir = self.results_dir / "softclipped"
-        self.dedup_dir = self.results_dir / "dedup"
-        self.mapdamage_dir = self.results_dir / "mapdamage"
-        self.qualimap_dir = self.results_dir / "qualimap"
-        self.vcf_dir = self.results_dir / "vcf_files"
-        
         # 参照ゲノム
         self.reference_genome = args.reference_genome or (self.base_dir / "reference" / "equCab3.nochrUn.fa")
-        
+
         # 作成
-        for dir_path in [self.raw_data_dir, self.results_dir, self.logs_dir, self.temp_dir,
-                        self.bam_dir, self.softclipped_dir, self.dedup_dir, 
-                        self.mapdamage_dir, self.qualimap_dir, self.vcf_dir]:
+        for dir_path in [self.raw_data_dir, self.results_dir, self.logs_dir, self.temp_dir]:
             dir_path.mkdir(parents=True, exist_ok=True)
 
 def parse_args():

@@ -13,6 +13,10 @@ class BAMProcessor:
         """Sort, deduplicate, and index BAM file"""
         logger.info(f"Running BAM processing for {sample_acc}")
         base_name = sample_acc
+        sample_bam_dir = self.config.results_dir / sample_acc / "bam_files"
+        sample_dedup_dir = self.config.results_dir / sample_acc / "dedup"
+        sample_bam_dir.mkdir(parents=True, exist_ok=True)
+        sample_dedup_dir.mkdir(parents=True, exist_ok=True)
 
         def run_cmd(cmd, step_name):
             try:
@@ -25,14 +29,14 @@ class BAMProcessor:
                 raise
 
         # Step 1: Sort
-        sorted_bam = self.config.bam_dir / f"{base_name}.sorted.bam"
+        sorted_bam = sample_bam_dir / f"{base_name}.sorted.bam"
         run_cmd([
             "samtools", "sort", "-@", str(self.config.args.threads), 
             "-o", str(sorted_bam), str(softclipped_bam)
         ], "samtools sort")
 
         # Step 2: CleanSam
-        clean_bam = self.config.bam_dir / f"{base_name}.clean.bam"
+        clean_bam = sample_bam_dir / f"{base_name}.clean.bam"
         run_cmd([
             "java", "-Xmx" + self.config.args.java_mem, "-jar", "/usr/local/bin/picard.jar",
             "CleanSam", "I=" + str(sorted_bam), "O=" + str(clean_bam),
@@ -40,7 +44,7 @@ class BAMProcessor:
         ], "Picard CleanSam")
 
         # Step 3: AddOrReplaceReadGroups
-        grouped_bam = self.config.bam_dir / f"{base_name}.grouped.bam"
+        grouped_bam = sample_bam_dir / f"{base_name}.grouped.bam"
         run_cmd([
             "java", "-Xmx" + self.config.args.java_mem, "-jar", "/usr/local/bin/picard.jar",
             "AddOrReplaceReadGroups", "I=" + str(clean_bam), "O=" + str(grouped_bam),
@@ -50,8 +54,8 @@ class BAMProcessor:
         ], "Picard AddOrReplaceReadGroups")
 
         # Step 4: MarkDuplicates (REMOVE_DUPLICATESでdedupも同時に)
-        marked_bam = self.config.bam_dir / f"{base_name}.marked.bam"
-        metrics_file = self.config.bam_dir / f"{base_name}.marked_dup_metrics.txt"
+        marked_bam = sample_bam_dir / f"{base_name}.marked.bam"
+        metrics_file = sample_bam_dir / f"{base_name}.marked_dup_metrics.txt"
         run_cmd([
             "java", "-Xmx" + self.config.args.java_mem, "-jar", "/usr/local/bin/picard.jar",
             "MarkDuplicates", "I=" + str(grouped_bam), "O=" + str(marked_bam),
@@ -59,7 +63,7 @@ class BAMProcessor:
         ], "Picard MarkDuplicates")
 
         # Step 5: Sort deduplicated BAM
-        final_dedup_bam = self.config.dedup_dir / f"{base_name}.marked.dedup.sorted.bam"
+        final_dedup_bam = sample_dedup_dir / f"{base_name}.marked.dedup.sorted.bam"
         run_cmd([
             "samtools", "sort", "-o", str(final_dedup_bam), str(marked_bam)
         ], "samtools sort (dedup)")

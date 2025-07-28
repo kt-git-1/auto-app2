@@ -12,8 +12,8 @@ class MapDamageAnalyzer:
         """Run mapDamage analysis"""
         logger.info(f"Running mapDamage for {sample_acc}")
         
-        sample_outdir = self.config.mapdamage_dir / sample_acc
-        sample_outdir.mkdir(exist_ok=True)
+        sample_outdir = self.config.results_dir / sample_acc / "mapdamage"
+        sample_outdir.mkdir(parents=True, exist_ok=True)
         
         # Filter BAM (mapQ>=30, POS>=300)
         filtered_bam = self.config.temp_dir / f"{sample_acc}_filtered.bam"
@@ -47,8 +47,8 @@ class QualimapAnalyzer:
         """Run Qualimap quality check"""
         logger.info(f"Running Qualimap for {sample_acc}")
         
-        sample_outdir = self.config.qualimap_dir / sample_acc
-        sample_outdir.mkdir(exist_ok=True)
+        sample_outdir = self.config.results_dir / sample_acc / "qualimap"
+        sample_outdir.mkdir(parents=True, exist_ok=True)
         
         qualimap_cmd = [
             "qualimap", "bamqc", "-bam", str(dedup_bam),
@@ -72,7 +72,9 @@ class HaplotypeCaller:
         """Run GATK HaplotypeCaller"""
         logger.info(f"Running HaplotypeCaller for {sample_acc}")
         
-        vcf_file = self.config.vcf_dir / f"{sample_acc}.vcf"
+        vcf_dir = self.config.results_dir / sample_acc / "vcf_files"
+        vcf_dir.mkdir(parents=True, exist_ok=True)
+        vcf_file = vcf_dir / f"{sample_acc}.vcf"
         
         haplotypecaller_cmd = [
             "gatk", "HaplotypeCaller",
@@ -90,4 +92,4 @@ class HaplotypeCaller:
             return vcf_file
         except subprocess.CalledProcessError as e:
             logger.error(f"HaplotypeCaller failed for {sample_acc}: {e}")
-            return None 
+            return None
