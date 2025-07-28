@@ -14,7 +14,10 @@ class BWAMapper:
         logger.info(f"Starting mapping pipeline for {sample_acc}")
         
         sample_dir = self.config.results_dir / sample_acc
-        sample_dir.mkdir(exist_ok=True)
+        sample_dir.mkdir(parents=True, exist_ok=True)
+
+        bam_dir = sample_dir / "bam_files"
+        bam_dir.mkdir(parents=True, exist_ok=True)
         
         # ペアエンド判定
         if len(fastq_files) >= 2:
@@ -36,8 +39,8 @@ class BWAMapper:
                 pair1_file = temp_prefix.with_suffix(".pair1.truncated")
                 pair2_file = temp_prefix.with_suffix(".pair2.truncated")
                 if pair1_file.exists() and pair2_file.exists():
-                    shutil.move(str(pair1_file), str(sample_dir / f"{sample_acc}.pair1.truncated"))
-                    shutil.move(str(pair2_file), str(sample_dir / f"{sample_acc}.pair2.truncated"))
+                    shutil.move(str(pair1_file), str(bam_dir / f"{sample_acc}.pair1.truncated"))
+                    shutil.move(str(pair2_file), str(bam_dir / f"{sample_acc}.pair2.truncated"))
                 else:
                     logger.error(f"AdapterRemoval output files not found for {sample_acc}")
                     return None
@@ -45,13 +48,13 @@ class BWAMapper:
                 logger.error(f"AdapterRemoval failed for {sample_acc}: {e}")
                 return None
             # BWA MEM (ペアエンド)
-            bam_file = sample_dir / f"{sample_acc}.bam"
+            bam_file = bam_dir / f"{sample_acc}.bam"
             bwa_cmd = [
                 "bwa", "mem", "-t", str(self.config.args.threads), "-K", "100000000", "-Y",
                 "-R", f"@RG\\tID:{sample_acc}\\tSM:{sample_acc}\\tPL:ILLUMINA",
                 str(self.config.reference_genome),
-                str(sample_dir / f"{sample_acc}.pair1.truncated"),
-                str(sample_dir / f"{sample_acc}.pair2.truncated")
+                str(bam_dir / f"{sample_acc}.pair1.truncated"),
+                str(bam_dir / f"{sample_acc}.pair2.truncated")
             ]
         elif len(fastq_files) == 1:
             fastq1 = fastq_files[0]
@@ -70,7 +73,7 @@ class BWAMapper:
                 subprocess.run(adapter_removal_cmd, check=True)
                 single_file = temp_prefix.with_suffix(".truncated")
                 if single_file.exists():
-                    shutil.move(str(single_file), str(sample_dir / f"{sample_acc}.truncated"))
+                    shutil.move(str(single_file), str(bam_dir / f"{sample_acc}.truncated"))
                 else:
                     logger.error(f"AdapterRemoval output file not found for {sample_acc}")
                     return None
@@ -78,12 +81,12 @@ class BWAMapper:
                 logger.error(f"AdapterRemoval failed for {sample_acc}: {e}")
                 return None
             # BWA MEM (シングルエンド)
-            bam_file = sample_dir / f"{sample_acc}.bam"
+            bam_file = bam_dir / f"{sample_acc}.bam"
             bwa_cmd = [
                 "bwa", "mem", "-t", str(self.config.args.threads), "-K", "100000000", "-Y",
                 "-R", f"@RG\\tID:{sample_acc}\\tSM:{sample_acc}\\tPL:ILLUMINA",
                 str(self.config.reference_genome),
-                str(sample_dir / f"{sample_acc}.truncated")
+                str(bam_dir / f"{sample_acc}.truncated")
             ]
         else:
             logger.error(f"No FASTQ files found for {sample_acc}")

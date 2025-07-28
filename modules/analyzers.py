@@ -20,9 +20,18 @@ class MapDamageAnalyzer:
         sorted_filtered_bam = self.config.temp_dir / f"{sample_acc}_filtered.sorted.bam"
         
         # Filter and sort
-        subprocess.run([
-            "samtools", "view", "-h", "-q", "30", str(softclipped_bam)
-        ], stdout=subprocess.PIPE, check=True)
+        try:
+            subprocess.run([
+                "samtools", "view", "-b", "-q", "30", "-e", "POS>=300",
+                "-o", str(filtered_bam), str(softclipped_bam)
+            ], check=True)
+            subprocess.run([
+                "samtools", "sort", "-o", str(sorted_filtered_bam), str(filtered_bam)
+            ], check=True)
+            filtered_bam.unlink(missing_ok=True)
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Filtering failed for {sample_acc}: {e}")
+            return None
         
         # Run mapDamage
         mapdamage_cmd = [
