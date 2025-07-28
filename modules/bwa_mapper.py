@@ -15,9 +15,13 @@ class BAMProcessor:
         logger.info(f"Running BAM processing for {sample_acc}")
         
         base_name = sample_acc
+        sample_bam_dir = self.config.results_dir / sample_acc / "bam_files"
+        sample_dedup_dir = self.config.results_dir / sample_acc / "dedup"
+        sample_bam_dir.mkdir(parents=True, exist_ok=True)
+        sample_dedup_dir.mkdir(parents=True, exist_ok=True)
         
         # Step 1: Sort
-        sorted_bam = self.config.bam_dir / f"{base_name}.sorted.bam"
+        sorted_bam = sample_bam_dir / f"{base_name}.sorted.bam"
         try:
             subprocess.run([
                 "samtools", "sort", "-@", str(self.config.args.threads), 
@@ -29,7 +33,7 @@ class BAMProcessor:
             raise
         
         # Step 2: CleanSam
-        clean_bam = self.config.bam_dir / f"{base_name}.clean.bam"
+        clean_bam = sample_bam_dir / f"{base_name}.clean.bam"
         try:
             subprocess.run([
                 "java", "-Xmx" + self.config.args.java_mem, "-jar", "/usr/local/bin/picard.jar",
@@ -42,7 +46,7 @@ class BAMProcessor:
             raise
         
         # Step 3: AddOrReplaceReadGroups
-        grouped_bam = self.config.bam_dir / f"{base_name}.grouped.bam"
+        grouped_bam = sample_bam_dir / f"{base_name}.grouped.bam"
         try:
             subprocess.run([
                 "java", "-Xmx" + self.config.args.java_mem, "-jar", "/usr/local/bin/picard.jar",
@@ -57,8 +61,8 @@ class BAMProcessor:
             raise
         
         # Step 4: MarkDuplicates
-        marked_bam = self.config.bam_dir / f"{base_name}.marked.bam"
-        metrics_file = self.config.bam_dir / f"{base_name}.marked_dup_metrics.txt"
+        marked_bam = sample_bam_dir / f"{base_name}.marked.bam"
+        metrics_file = sample_bam_dir / f"{base_name}.marked_dup_metrics.txt"
         try:
             subprocess.run([
                 "java", "-Xmx" + self.config.args.java_mem, "-jar", "/usr/local/bin/picard.jar",
@@ -71,12 +75,12 @@ class BAMProcessor:
             raise
         
         # Step 5: DeDup using Picard MarkDuplicates with REMOVE_DUPLICATES=true
-        dedup_bam = self.config.dedup_dir / f"{base_name}.marked.dedup.bam"
+        dedup_bam = sample_dedup_dir / f"{base_name}.marked.dedup.bam"
         try:
             subprocess.run([
                 "java", "-Xmx" + self.config.args.java_mem, "-jar", "/usr/local/bin/picard.jar",
                 "MarkDuplicates", "I=" + str(marked_bam), "O=" + str(dedup_bam),
-                "M=" + str(self.config.bam_dir / f"{base_name}.dedup_metrics.txt"),
+                "M=" + str(sample_bam_dir / f"{base_name}.dedup_metrics.txt"),
                 "REMOVE_DUPLICATES=true", "VALIDATION_STRINGENCY=LENIENT"
             ], check=True)
         except subprocess.CalledProcessError as e:
@@ -84,7 +88,7 @@ class BAMProcessor:
             raise
         
         # Step 6: Sort deduplicated BAM
-        final_dedup_bam = self.config.dedup_dir / f"{base_name}.marked.dedup.sorted.bam"
+        final_dedup_bam = sample_dedup_dir / f"{base_name}.marked.dedup.sorted.bam"
         try:
             subprocess.run([
                 "samtools", "sort", "-o", str(final_dedup_bam), str(dedup_bam)

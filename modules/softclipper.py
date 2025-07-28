@@ -68,7 +68,9 @@ class SoftClipper:
         logger.info(f"Running softclipping for {sample_acc}")
         
         input_bam = bam_file
-        output_bam = self.config.softclipped_dir / f"{sample_acc}_softclipped.bam"
+        sample_dir = self.config.results_dir / sample_acc / "softclipped"
+        sample_dir.mkdir(parents=True, exist_ok=True)
+        output_bam = sample_dir / f"{sample_acc}_softclipped.bam"
         
         try:
             with pysam.AlignmentFile(input_bam, "rb") as in_bam, \

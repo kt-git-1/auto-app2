@@ -52,6 +52,14 @@ auto-app2/
 │   ├── raw_data/            # 生データ（FASTQ等）
 │   ├── reference/           # 参照ゲノム
 │   ├── results/             # 解析結果
+│   │   └── <ProjectID>/
+│   │       └── <AccessionID>/
+│   │           ├── bam_files/
+│   │           ├── softclipped/
+│   │           ├── dedup/
+│   │           ├── mapdamage/
+│   │           ├── qualimap/
+│   │           └── vcf_files/
 │   ├── logs/                # ログ
 │   └── temp/                # 一時ファイル
 ├── requirements.txt         # Python依存パッケージ
@@ -143,8 +151,8 @@ python3 main.py
    - `modules/analyzers.py`  
    - GATK, mapDamage, Qualimap等を呼び出し
 
-6. **結果の保存・レポート生成**  
-   - `data/results/` 以下に各種出力ファイルを保存
+6. **結果の保存・レポート生成**
+   - `data/results/<プロジェクトID>/<Accession ID>/` 以下に各種出力ファイルを保存
 
 ---
 
@@ -164,8 +172,8 @@ python3 main.py
   - ダウンロードしたFASTQ等の生データ
 - `data/reference/`  
   - 参照ゲノム（FASTA, FAI等）
-- `data/results/`  
-  - 解析結果（BAM, VCF, QCレポート等）
+- `data/results/<プロジェクトID>/<Accession ID>/`
+  - サンプルごとの解析結果（BAM, VCF, QCレポート等）
 - `data/logs/`  
   - 実行ログ
 - `data/temp/`  
