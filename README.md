@@ -116,7 +116,7 @@ brew install samtools
 ### 2. メインスクリプトの実行
 
 ```sh
-python main.py
+python3 main.py
 ```
 
 ---
